@@ -22,6 +22,12 @@ def init():
                 quarantine_file_button.config(state="normal")
             if CONFIG_DATA["download_folder_filepath"] != "":
                 shred_file_button.config(state="normal")
+            if CONFIG_DATA["confirm_shredding_pref"] == 1:
+                confirm_shredding.set(True)
+            if CONFIG_DATA["show_file_sizes_pref"] == 1:
+                show_file_sizes.set(True)
+            if CONFIG_DATA["use_binary_pref"] == 1:
+                use_binary.set(True)
     except FileNotFoundError:
         messagebox.showwarning("dlshredder", "config file not found!")
         root.quit()
@@ -58,8 +64,15 @@ def show_files():
         files = os.listdir()
         scrollable_text.config(state="normal")
         scrollable_text.delete("1.0", "end")
-        for f in files:
-            scrollable_text.insert("end", f"{f}\n")
+        if show_file_sizes.get():
+            for f in files:
+                if use_binary.get():
+                    scrollable_text.insert("end", f"{f} | {os.path.getsize(f)/(1024**2):.2f} MiB\n")
+                else:
+                    scrollable_text.insert("end", f"{f} | {os.path.getsize(f)/(1000**2):.2f} MB\n")
+        else:
+            for f in files:
+                scrollable_text.insert("end", f"{f}\n")
         scrollable_text.config(state="disabled")
         file_entry.config(state="normal")
         shred_file_button.config(state="normal")
@@ -73,8 +86,15 @@ def shred():
     files = os.listdir() 
     if f in files and f != "":
         try:
-            os.remove(f)
-            show_files()
+            if confirm_shredding.get():
+                if messagebox.askyesno("dlshredder", f"are you sure you want to delete {f} from {os.getcwd()}"):
+                    os.remove(f)
+                    show_files()
+                else:
+                    messagebox.showinfo("dlshredder", "shredding cancelled")
+            else:
+                os.remove(f)
+                show_files()
         except PermissionError:
             messagebox.showwarning("dlshredder", "no permissions.")
     elif f == "":
@@ -95,7 +115,6 @@ def quarantine():
         messagebox.showwarning("dlshredder", "file name cannot be empty.")
     else:
         messagebox.showinfo("dlshredder", f"couldn't find {f} in {os.getcwd()}")
-
 
 def show_config():
     scrollable_text.config(state="normal")
@@ -120,6 +139,21 @@ def clear_folder_data():
     with open(fr"{CONFIG_DATA["project_filepath"]}\config.json", "w") as f:
         f.write(json.dumps(CONFIG_DATA))
 
+def set_default_prefs():
+    CONFIG_DATA["confirm_shredding_pref"] = 1
+    CONFIG_DATA["show_file_sizes_pref"] = 1
+    CONFIG_DATA["use_binary_pref"] = 0
+    confirm_shredding.set(CONFIG_DATA["confirm_shredding_pref"])
+    show_file_sizes.set(CONFIG_DATA["show_file_sizes_pref"])
+    use_binary.set(CONFIG_DATA["use_binary_pref"])
+
+def save_prefs(event=None):
+    CONFIG_DATA["confirm_shredding_pref"] = int(confirm_shredding.get())
+    CONFIG_DATA["show_file_sizes_pref"] = int(show_file_sizes.get())
+    CONFIG_DATA["use_binary_pref"] = int(use_binary.get())
+    with open(fr"{CONFIG_DATA["project_filepath"]}\config.json", "w") as f:
+        f.write(json.dumps(CONFIG_DATA))
+
 # ROOT
 root = tk.Tk()
 root.title(f"dlshredder (v{VERSION})")
@@ -132,11 +166,23 @@ root.iconphoto(True, icon)
 menubar = tk.Menu(root)
 
 set_menu = tk.Menu(menubar, tearoff=0)
-set_menu.add_command(label=f"Set Downloads Folder", command=set_download_folder)
-set_menu.add_command(label=f"Set Quarantine Folder", command=set_quarantine_folder)
+set_menu.add_command(label="Set Downloads Folder", command=set_download_folder)
+set_menu.add_command(label="Set Quarantine Folder", command=set_quarantine_folder)
 set_menu.add_command(label="Clear Folder Data", command=clear_folder_data)
 
+confirm_shredding = tk.BooleanVar(value=False)
+show_file_sizes = tk.BooleanVar(value=False)
+use_binary = tk.BooleanVar(value=False)
+
+preferences_menu = tk.Menu(menubar, tearoff=0)
+preferences_menu.add_checkbutton(label="Confirm Shredding", variable=confirm_shredding)
+preferences_menu.add_checkbutton(label="Show File Sizes", variable=show_file_sizes)
+preferences_menu.add_checkbutton(label="Use Binary (MiB)", variable=use_binary)
+preferences_menu.add_command(label="Reset to Default", command=set_default_prefs)
+preferences_menu.add_command(label="Save Preferences", command=save_prefs, accelerator="Ctrl+S")
+
 menubar.add_cascade(label="Folder", menu=set_menu)
+menubar.add_cascade(label="Preferences", menu=preferences_menu)
 
 # VIEW
 view_frame = tk.Frame(root, bg="#CCCCCC")
@@ -163,4 +209,5 @@ show_config_button.place(relwidth=0.92, relheight=0.065, relx=0.5, rely=0.9, anc
 
 init()
 root.config(menu=menubar)
+root.bind("<Control-s>", save_prefs)
 root.mainloop()
