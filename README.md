@@ -6,7 +6,7 @@ a tool made to make your Downloads folder less messy.<br>
 - Shredding (deleting) files inside the specified Downloads folder
 - Quarantining (moving) files to a different (custom user-specified) folder
 - Displaying all files inside the specified Downloads folder
-- Displaying file sizes in either MB's or MiB's
+- Displaying file sizes in either MB or MiB
 
 ## Instructions
 ### Setting up the Downloads folder
