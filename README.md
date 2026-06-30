@@ -1,4 +1,4 @@
-# dlshredder (v1.0.0)
+# dlshredder (v1.1.0)
 <sup>dlshredder - download shredder</sup>
 
 a tool made to make your Downloads folder less messy.<br>
@@ -6,6 +6,7 @@ a tool made to make your Downloads folder less messy.<br>
 - Shredding (deleting) files inside the specified Downloads folder
 - Quarantining (moving) files to a different (custom user-specified) folder
 - Displaying all files inside the specified Downloads folder
+- Displaying file sizes in either MB's or MiB's
 
 ## Instructions
 ### Setting up the Downloads folder
